@@ -1,0 +1,286 @@
+<html>
+<head>
+	<title>Canvas & Mootools</title>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mootools/1.6.0/mootools-core.js"></script>
+	<script type="text/javascript">
+		var canvas, ctx, figures, idTimer;
+		var array_of_func = [up, down, left, right];
+		
+		TBall = new Class({
+			initialize: function(pX, pY) {
+				this.posX = pX;
+				this.posY = pY;
+				this.colBall = 'rgb(' + Math.floor(Math.random() * 256) + ','
+				+ Math.floor(Math.random() * 256) + ',' + Math.floor(Math.random() * 256) + ')';
+				this.rBall = 5 + Math.random() * 25;
+			},
+			posX: 0,
+			posY: 0,
+			colBall:"rgb(0, 0, 0)",
+			rBall: 0,
+			colorBall: function(ctx){
+				with (this){
+					var gradient = ctx.createRadialGradient(posX + rBall / 4,
+						posY - rBall / 6, rBall / 8, posX, posY, rBall);
+					gradient.addColorStop(0, '#fff');
+					gradient.addColorStop(0.85, colBall);
+					return gradient;
+				}
+			},
+			draw : function(ctx){
+				with (this){
+					ctx.fillStyle = colorBall(ctx);
+					ctx.beginPath();
+					ctx.arc(posX, posY, rBall, 0, 2 * Math.PI, false);
+					ctx.closePath();
+					ctx.fill();
+				}
+			}
+		});
+		TRectangle = new Class({
+			initialize: function(pX, pY) {
+				this.posX = pX;
+				this.posY = pY;
+				this.colRect = 'rgb('+Math.floor(Math.random()*256)+','
+				+Math.floor(Math.random()*256)+','+Math.floor(Math.random()*256)+')';
+				this.seccolRect = 'rgb('+Math.floor(Math.random()*256)+','
+				+Math.floor(Math.random()*256)+','+Math.floor(Math.random()*256)+')';
+				this.Rwidth =  Math.random()*30;
+				this.Rheight =  Math.random()*30;
+			},
+			posX: 0,
+			posY: 0,
+			colRect: "rgb(0,0,0)",
+			width: 0,
+			height: 0,
+			colorRect: function(ctx){
+				with (this){
+					var gradient = ctx.createLinearGradient(posX, posY, posX + 50, posY + 50);
+					gradient.addColorStop(0, seccolRect);
+					gradient.addColorStop(1, colRect);
+					return gradient;
+				}
+			},
+			draw: function(ctx){
+				with (this){
+					ctx.fillStyle = colorRect(ctx);
+					ctx.beginPath();
+					ctx.fillRect(posX, posY, Rwidth, Rheight);
+					ctx.closePath();
+					ctx.fill();
+				}
+			}
+		});
+		TTriangle = new Class({
+			initialize: function(pX, pY) {
+				this.posX = pX;
+				this.posY = pY;
+				this.Rwidth = (Math.random() * (100 - 20) + 20);
+				this.Rheight = (Math.random(20) * (100 - 20) + 20);
+				this.colTiangle = 'rgb('+Math.floor(Math.random()*256)+','
+				+Math.floor(Math.random()*256)+','+Math.floor(Math.random()*256)+')';
+				this.seccolTriangle = 'rgb('+Math.floor(Math.random()*256)+','
+				+Math.floor(Math.random()*256)+','+Math.floor(Math.random()*256)+')';
+			},
+			posX: 0,
+			posY: 0,
+			colRect: "rgb(0,0,0)",
+			width: 0,
+			height: 0,
+			colorRect: function(ctx){
+				with (this){
+					var gradient = ctx.createLinearGradient(posX, posY, posX + 50, posY + 50);
+					gradient.addColorStop(0, seccolTriangle);
+					gradient.addColorStop(1, colTiangle);
+					return gradient;
+				}
+			},
+			draw: function(ctx){
+				with (this){
+					ctx.fillStyle = colorRect(ctx);
+					ctx.beginPath();
+					ctx.moveTo(posX, posY);
+					ctx.lineTo(posX + Rwidth, posY + Rheight);
+					ctx.lineTo(posX, posY + Rheight);
+					ctx.lineTo(posX, posY);
+					ctx.closePath();
+					ctx.fill();
+				}
+			}
+		});
+		var array_of_fig = [TBall, TRectangle, TTriangle];
+		var array_of_move = [];	
+
+		function RandomMove(){
+			for (var i = 0; i < figures.length; i++){
+				array_of_move[i] = array_of_func[getRandomInt(0, array_of_func.length)];
+			}
+		}
+		function drawBack(ctx,col1,col2,w,h){
+			ctx.save();
+			var g = ctx.createLinearGradient(0,0,0,h);
+			g.addColorStop(1,col1);
+			g.addColorStop(0,col2);
+			ctx.fillStyle = g;
+			ctx.fillRect(0,0,w,h);
+			ctx.restore();
+		}
+		function init(){
+			canvas = document.getElementById('canvas');
+			if (canvas.getContext){
+				ctx = canvas.getContext('2d');
+				drawBack(ctx,'#202020','#aaa',canvas.width,canvas.height);
+				figures = [];
+				for (var i = 1; i <= 10; i++){
+					var item = new array_of_fig[getRandomInt(0, array_of_fig.length)](10 + Math.random() * (canvas.width - 30),
+						10 + Math.random() * (canvas.height - 30));
+					item.draw(ctx);
+					figures.push(item);
+				}
+			}
+		}
+		function goInput(event){
+			var item = new array_of_fig[getRandomInt(0, array_of_fig.length)](event.clientX, event.clientY);
+			item.draw(ctx);
+			figures.push(item);
+			array_of_move.push(array_of_func[getRandomInt(0, array_of_func.length)]);
+		}
+		function intersection(i){
+			for(var j = 0; j < figures.length; j++){
+				if (j === i) {continue}
+				if ((figures[i].posX != figures[j].posX) && (figures[i].posY != figures[j].posY)){
+					console.log(" пересекаются ");
+					return false;
+				}
+				else {
+					console.log("yt пересечение");
+					return true;
+				}
+			}
+
+		}
+
+		function sizeUp(){
+			drawBack(ctx, '#202020', '#aaa', canvas.width, canvas.height);
+			for (var i = 0; i < figures.length; i) {
+				figures[i].rBall += 1;
+				figures[i].Rheight += 1;
+				figures[i].Rwidth += 1;
+				figures[i].draw(ctx);
+				if ((figures[i].Rwidth > 29) || (figures[i].Rheight > 29) || (figures[i].rBall > 29) || (intersection(i)))
+					figures.splice(i, 1);
+				else
+					i++;
+			}
+		}
+		function up(i) {
+			figures[i].posX = figures[i].posX + (Math.random() * 4 - 2);
+			figures[i].posY = figures[i].posY + (Math.random() * 2 - 4);
+			figures[i].draw(ctx);
+			if ((figures[i].posX > canvas.width) || (figures[i].posX < 0) || (figures[i].posY < 0) || (intersection(i))) 
+				figures.splice(i, 1);
+		}
+		function moveBallUp(){
+			drawBack(ctx, '#202020', '#aaa', canvas.width, canvas.height);
+			for (var i = 0; i < figures.length; i++){
+				up(i);
+			}
+		}
+		function down(i){
+			figures[i].posX = figures[i].posX + (Math.random() * 4 - 2);
+			figures[i].posY = figures[i].posY + (Math.random() * 2 + 2);
+			figures[i].draw(ctx);
+			if ((figures[i].posX > canvas.width) || (figures[i].posX < 0) || (figures[i].posY < 0) || (intersection(i))) 
+				figures.splice(i, 1);
+		}
+		function moveBallDown(){
+			drawBack(ctx, '#202020', '#aaa', canvas.width, canvas.height);
+			for (var i = 0; i < figures.length; i++){
+				down(i);
+			}
+		}
+		function right(i){
+			figures[i].posX = figures[i].posX + (Math.random() * 2 + 2);
+			figures[i].posY = figures[i].posY + (Math.random() * 4 - 2);
+			figures[i].draw(ctx);
+			if ((figures[i].posX > canvas.width) || (figures[i].posX < 0) || (figures[i].posY < 0) || (intersection(i))) 
+				figures.splice(i, 1);
+		}
+		function moveBallRight(){
+			drawBack(ctx, '#202020', '#aaa', canvas.width, canvas.height);
+			for (var i = 0; i < figures.length; i++){
+				right(i);
+			}
+		}
+		function left(i){
+			figures[i].posX = figures[i].posX + (Math.random() * 2 - 4);
+			figures[i].posY = figures[i].posY + (Math.random() * 4 - 2); 
+			figures[i].draw(ctx);
+			if ((figures[i].posX > canvas.width) || (figures[i].posX < 0) || (figures[i].posY < 0) || (intersection(i))) 
+				figures.splice(i, 1);
+		}
+		function moveBallLeft(){
+			drawBack(ctx, '#202020', '#aaa', canvas.width, canvas.height);
+			for (var i = 0; i < figures.length; i++){
+				left(i);
+			}
+		}
+		function getRandomInt(min, max) {
+			return Math.floor(Math.random() * (max - min)) + min;
+		}
+		function Chaos(){
+			drawBack(ctx, '#202020', '#aaa', canvas.width, canvas.height);
+			for (var i = 0; i < figures.length; i++) {
+				array_of_func[getRandomInt(0, array_of_func.length)](i);
+			}
+		}
+		function moveBallRandom(){
+			drawBack(ctx, '#202020', '#aaa', canvas.width, canvas.height);
+			for (var i = 0; i < figures.length; i++) {
+				array_of_move[i](i);
+			}
+		}
+		function moveUp(){
+			clearInterval(idTimer)
+			idTimer = setInterval('moveBallUp();', 50);
+		}
+		function moveDown(){
+			clearInterval(idTimer)
+			idTimer = setInterval('moveBallDown();', 50);
+		}
+		function moveRight(){
+			clearInterval(idTimer)
+			idTimer = setInterval('moveBallRight();', 50);
+		}
+		function moveLeft(){
+			clearInterval(idTimer)
+			idTimer = setInterval('moveBallLeft();', 50);
+		}		
+		function moveChaos(){
+			clearInterval(idTimer)
+			idTimer = setInterval('Chaos()', 50);
+		}
+		function moveRandom(){
+			clearInterval(idTimer)
+			idTimer = setInterval('moveBallRandom()', 50);
+		}
+	</script>
+	<style type="text/css">
+	canvas { border: 1px solid blue; }
+</style>
+</head>
+<body onload = "init();">
+	<canvas id="canvas" width="600" height="400" onclick="goInput(event);">
+	</canvas>
+	<form>
+		<input type = "button" value = "Вверх" onclick = "moveUp()">
+		<input type = "button" value = "Вниз" onclick = "moveDown()">
+		<input type = "button" value = "Вправо" onclick = "moveRight()">
+		<input type = "button" value = "Влево" onclick = "moveLeft()">
+		<input type = "button" value = "Хаос" onclick = "moveChaos()">
+		<input type = "button" value = "Случайно" onclick = "moveRandom(), RandomMove()">
+		<input type = "button" value = "Увеличение" onclick = "sizeUp()">
+		<input type = "button" value = "Стоп" onclick = "clearInterval(idTimer);">
+	</form>
+</body>
+</html>
